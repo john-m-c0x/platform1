@@ -1,0 +1,34 @@
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --font-heading: 'Merriweather', serif;
+  --font-body: 'Noto Serif', serif;
+  --font-mono: 'Courier Prime', monospace;
+  --font-ui: 'Ubuntu', sans-serif;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  line-height: 1.2;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
