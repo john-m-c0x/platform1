@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import DepartureTime from './components/DepartureTime';
+import { DepartureTime } from './components/DepartureTime';
 import './App.css';
 
 const images = [
-  '/images/train-station.jpg',
-  '/images/train-station-2.jpg',
-  '/images/train-station-3.jpg',
-  '/images/train-station-4.jpg',
+  'platform1/public/images/train-station.jpg',
+  'platform1/public/images/train-station-2.jpg',
+  'platform1/public/images/train-station-3.jpg',
+  'platform1/public/images/train-station-4.jpg',
 ];
 
-function App() {
+const App: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 

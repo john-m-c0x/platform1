@@ -1,67 +1,114 @@
 import React, { useState, useEffect } from 'react';
 import './DepartureTime.css';
 
-const deptimes = ["05:10", "05:47", "06:15", "06:31", "06:53", "07:10", "07:25", "07:45", 
-                 "08:06", "08:25", "08:45", "09:01", "09:17", "09:32", "09:46", "10:01", 
-                 "10:15", "10:31", "10:46", "11:01"];
+interface Departure {
+  scheduled_time: string;
+  live_time: string | null;
+  destination: string;
+}
 
-const DepartureTime: React.FC = () => {
-  const [currentTime, setCurrentTime] = useState<string>('');
-  const [nextTrain, setNextTrain] = useState<{time: string, mins: number} | null>(null);
+interface ApiResponse {
+  departures: Departure[];
+  lastUpdated: string;
+  updating: boolean;
+}
 
-  const minutesUntil = (trainTime: string, currentTime: string): number => {
-    const [trainHours, trainMins] = trainTime.split(':').map(Number);
-    const [currentHours, currentMins] = currentTime.split(':').map(Number);
-    const minutes = (trainHours * 60 + trainMins) - (currentHours * 60 + currentMins);
-    return minutes < 0 ? minutes + (24 * 60) : minutes;
+export const DepartureTime: React.FC = () => {
+  const [departures, setDepartures] = useState<Departure[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDepartures = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/departures');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: ApiResponse = await response.json();
+      
+      // Log the full API response
+      console.log('API Response:', {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        data: data
+      });
+      
+      setDepartures(data.departures);
+      setLastUpdated(data.lastUpdated);
+      setError(null);
+    } catch (e) {
+      const errorMessage = `Failed to fetch departures: ${e instanceof Error ? e.message : String(e)}`;
+      console.error('Error details:', e);
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    const updateTimes = () => {
-      const now = new Date();
-      const melbourneTime = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-      const timeStr = melbourneTime.toLocaleTimeString('en-US', { 
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      setCurrentTime(timeStr);
-
-      for (const time of deptimes) {
-        if (time > timeStr) {
-          setNextTrain({ time, mins: minutesUntil(time, timeStr) });
-          return;
-        }
-      }
-      
-      const nextTrainTime = deptimes[0];
-      setNextTrain({ 
-        time: nextTrainTime, 
-        mins: minutesUntil(nextTrainTime, timeStr)
-      });
-    };
-
-    updateTimes();
-    const interval = setInterval(updateTimes, 60000);
+    console.log('Initiating API call...');
+    fetchDepartures();
+    const interval = setInterval(() => {
+      console.log('Refreshing data...');
+      fetchDepartures();
+    }, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="departure-time">
+        <div className="loading">Loading departure times...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="departure-time">
+        <div className="error">{error}</div>
+        <button onClick={fetchDepartures} className="retry-button">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!departures.length) {
+    return (
+      <div className="departure-time">
+        <div className="no-departures">No departures found</div>
+      </div>
+    );
+  }
+
   return (
     <div className="departure-time">
-      {nextTrain && (
-        <div className="next-train">
-          <div className="train-time">Next train: {nextTrain.time}</div>
-          <div className="minutes-until">
-            Departing in: {
-              nextTrain.mins >= 60
-                ? `${Math.floor(nextTrain.mins / 60)} hour${Math.floor(nextTrain.mins / 60) > 1 ? 's' : ''} ${nextTrain.mins % 60} minute${nextTrain.mins % 60 !== 1 ? 's' : ''}`
-                : `${nextTrain.mins} minute${nextTrain.mins !== 1 ? 's' : ''}`
-           }
+      <div className="station-image">
+        <img src="/images/train-station.jpg" alt="Train Station" />
+      </div>
+      
+      <div className="departures-container">
+        <h2>Next Trains</h2>
+        {departures.slice(0, 5).map((departure, index) => (
+          <div key={index} className="departure-item">
+            <div className="time">
+              {departure.scheduled_time}
+              {departure.live_time && (
+                <span className="live-time"> (Live: {departure.live_time})</span>
+              )}
+            </div>
+            <div className="destination">{departure.destination}</div>
           </div>
+        ))}
+      </div>
+
+      {lastUpdated && (
+        <div className="last-updated">
+          Last updated: {lastUpdated}
         </div>
       )}
     </div>
   );
-};
-
-export default DepartureTime; 
+}; 

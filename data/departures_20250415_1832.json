@@ -1,0 +1,14 @@
+[
+  {
+    "scheduled_time": "7:33 pm",
+    "live_time": null,
+    "destination": "To Flinders Street Station",
+    "scraped_at": "18:32"
+  },
+  {
+    "scheduled_time": "8:54 pm",
+    "live_time": null,
+    "destination": "To Camberwell Station",
+    "scraped_at": "18:32"
+  }
+]
