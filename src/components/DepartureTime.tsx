@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import './DepartureTime.css';
+import { fetchTrainDepartures, TrainDeparture } from '../services/trainsApi';
 
-const deptimes = ["05:10", "05:47", "06:15", "06:31", "06:53", "07:10", "07:25", "07:45", 
+// Fallback static times in case API is unavailable
+const fallbackTimes = ["05:10", "05:47", "06:15", "06:31", "06:53", "07:10", "07:25", "07:45", 
                  "08:06", "08:25", "08:45", "09:01", "09:17", "09:32", "09:46", "10:01", 
                  "10:15", "10:31", "10:46", "11:01"];
 
+interface FormattedDeparture {
+  time: string;
+  destination: string;
+  mins: number;
+  isLive?: boolean;
+  platform: string;
+}
+
 const DepartureTime: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>('');
-  const [nextTrain, setNextTrain] = useState<{time: string, mins: number} | null>(null);
+  const [departures, setDepartures] = useState<FormattedDeparture[]>([]);
+  const [allDepartures, setAllDepartures] = useState<TrainDeparture[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const minutesUntil = (trainTime: string, currentTime: string): number => {
     const [trainHours, trainMins] = trainTime.split(':').map(Number);
@@ -16,6 +30,31 @@ const DepartureTime: React.FC = () => {
     return minutes < 0 ? minutes + (24 * 60) : minutes;
   };
 
+  // Fetch departures from the API
+  useEffect(() => {
+    const loadDepartures = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchTrainDepartures();
+        setAllDepartures(data.departures);
+        setLastUpdated(data.lastUpdated);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch departures:', err);
+        setError('Unable to load departures data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDepartures();
+
+    // Refresh data every 5 minutes
+    const refreshInterval = setInterval(loadDepartures, 5 * 60 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // Update current time and format departures
   useEffect(() => {
     const updateTimes = () => {
       const now = new Date();
@@ -27,38 +66,79 @@ const DepartureTime: React.FC = () => {
       });
       setCurrentTime(timeStr);
 
-      for (const time of deptimes) {
-        if (time > timeStr) {
-          setNextTrain({ time, mins: minutesUntil(time, timeStr) });
-          return;
+      // Get departure times from API if available, otherwise use fallback
+      const formattedDepartures: FormattedDeparture[] = [];
+      
+      if (allDepartures.length > 0) {
+        // Use API data
+        for (const dep of allDepartures) {
+          const depTime = dep.live_time || dep.scheduled_time;
+          if (depTime >= timeStr || minutesUntil(depTime, timeStr) < 12 * 60) { // Skip departures more than 12 hours away
+            formattedDepartures.push({
+              time: depTime,
+              destination: dep.destination || 'Flinders',
+              mins: minutesUntil(depTime, timeStr),
+              isLive: !!dep.live_time,
+              platform: dep.platform || '1'
+            });
+          }
+        }
+      } else {
+        // Use fallback times
+        for (const time of fallbackTimes) {
+          if (time >= timeStr || minutesUntil(time, timeStr) < 12 * 60) {
+            formattedDepartures.push({
+              time,
+              destination: 'Flinders',
+              mins: minutesUntil(time, timeStr),
+              isLive: false,
+              platform: '1'
+            });
+          }
         }
       }
       
-      const nextTrainTime = deptimes[0];
-      setNextTrain({ 
-        time: nextTrainTime, 
-        mins: minutesUntil(nextTrainTime, timeStr)
-      });
+      // Sort by departure time
+      formattedDepartures.sort((a, b) => a.mins - b.mins);
+      
+      // Limit to 5 departures max
+      setDepartures(formattedDepartures.slice(0, 5));
     };
 
     updateTimes();
     const interval = setInterval(updateTimes, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [allDepartures]);
 
   return (
     <div className="departure-time">
-      {nextTrain && (
-        <div className="next-train">
-          <div className="train-time">Next train: {nextTrain.time}</div>
-          <div className="minutes-until">
-            Departing in: {
-              nextTrain.mins >= 60
-                ? `${Math.floor(nextTrain.mins / 60)} hour${Math.floor(nextTrain.mins / 60) > 1 ? 's' : ''} ${nextTrain.mins % 60} minute${nextTrain.mins % 60 !== 1 ? 's' : ''}`
-                : `${nextTrain.mins} minute${nextTrain.mins !== 1 ? 's' : ''}`
-           }
-          </div>
+      {loading && <div className="loading">Loading departures...</div>}
+      
+      {error && <div className="error">{error}</div>}
+      
+      {departures.length > 0 && (
+        <div className="departures-list">
+          {departures.map((departure, index) => (
+            <div 
+              key={`${departure.time}-${index}`} 
+              className={`departure-item ${index >= 2 ? 'later' : ''}`}
+            >
+              <div className="departure-time-display">
+                <span className={`platform-indicator ${index >= 2 ? 'later' : ''}`}>1</span>
+                <div className={`time ${index < 2 ? 'highlighted' : ''}`}>{departure.time}</div>
+                <div className="destination">{departure.destination}</div>
+              </div>
+              <div className={`minutes-badge ${index >= 2 ? 'later' : ''}`}>
+                {departure.mins <= 0 ? 'Now' : 
+                  `${departure.mins} min${departure.mins !== 1 ? 's' : ''}`}
+              </div>
+            </div>
+          ))}
         </div>
+      )}
+      
+      {lastUpdated && (
+        <div className="last-updated">Updated: {lastUpdated}</div>
       )}
     </div>
   );

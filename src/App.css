@@ -3,6 +3,14 @@
   --font-body: 'Courier Prime', monospace;
   --font-mono: 'Courier Prime', monospace;
   --font-ui: 'Courier Prime', monospace;
+  --color-primary: #333;
+  --color-secondary: #666;
+  --color-accent: #f9c846;
+  --color-light: #fff9f3;
+  --border-radius: 16px;
+  --box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  --container-width: 450px;
+  --container-padding: 24px;
 }
 
 .App {
@@ -13,6 +21,7 @@
   font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.6;
+  color: var(--color-primary);
 }
 
 header {    
@@ -21,37 +30,39 @@ header {
 
 h1 {
   font-family: var(--font-heading);
-  font-size: 2.2rem;
-  font-weight: 300;
-  margin-bottom: 30px;
-  position: relative;
+  font-size: 2.5rem;
+  font-weight: 400;
+  margin-bottom: 20px;
   display: inline-block;
   letter-spacing: -0.02em;
   line-height: 1.4;
+  color: var(--color-primary);
 }
-
-h1::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: #666;
-  transition: width 0.7s ease;
-}
-
-h1:hover::after {
-  width: 100%;
+.address-container {
+  margin: 0 auto 5px;
+  max-width: var(--container-width);
+  padding: var(--container-padding);
+  background-color: var(--color-light);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
 }
 
 .address {
   font-family: var(--font-body);
   font-size: 1.1rem;
-  color: #666;
-  line-height: 1.6;
-  margin-top:10px;
+  color: var(--color-secondary);
+  line-height: 1.4;
+  margin: 0 0 15px 0;
+}
+
+.business-hours {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  line-height: 1.4;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.1);
 }
 
 .station-image {
@@ -60,9 +71,12 @@ h1:hover::after {
   max-width: 800px;
   height: 400px;
   margin: 0 auto;
-  border-radius: 19px;
+  border-radius: var(--border-radius);
   overflow: hidden;
-  cursor: pointer;
+  box-shadow: var(--box-shadow);
+  margin-top: 5px;
+  margin-bottom: 25px;
+  background-color: #f8f8f8;
 }
 
 .station-image img {
@@ -71,20 +85,26 @@ h1:hover::after {
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: 19px;
+  border-radius: var(--border-radius);
   object-fit: cover;
-  transition: opacity 0.9s ease;
+  transition: opacity 2s ease-in-out;
   opacity: 0;
+  margin: 0;
+  z-index: 1;
 }
 
 .station-image img.active {
   opacity: 1;
+  z-index: 2;
 }
 
 main {
   margin-bottom: 30px;
   font-family: var(--font-ui);
   font-weight: 400;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 footer {
@@ -106,7 +126,6 @@ footer:hover {
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 15px;
 }
 
 .social-links a {
@@ -130,45 +149,6 @@ footer:hover {
 .social-links a.instagram:hover {
   color: #e4405f;
   background: rgba(228, 64, 95, 0.1);
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: rgb(135, 103, 103);
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-img {
-  margin-top: 2.5rem;
 }
 
 
